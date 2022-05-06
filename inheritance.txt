@@ -1,0 +1,77 @@
+package InherianceWithInterfaces;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.StringTokenizer;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class MaxTemperature {
+
+  public static class TokenizerMapper
+       extends Mapper{
+
+    private final static IntWritable one = new IntWritable(1);
+    private Text word = new Text();
+
+    public void map(Object key, Text value, Context context
+                    ) throws IOException, InterruptedException {
+      String[] day_temp=value.toString().split(",");
+      context.write(new Text(day_temp[0]), new IntWritable(Integer.parseInt(day_temp[1])));
+    }
+  }
+
+  public static class IntSumReducer extends Reducer {
+    
+      int max=0;
+      int mini=10;
+    public void reduce(Text key, Iterable values,Context context) 
+            throws IOException, InterruptedException {
+        ArrayList ar = new ArrayList();
+        System.out.println(key+"==>"+max(values));
+        
+
+        context.write(key, new Text(" Max temperature for the day==>"+max(values)));
+    }
+      
+   
+    public int max(Iterable val) {
+        for (IntWritable value : val) {
+            if (value.get() > max)
+                //System.out.println(value.get());
+                max=value.get();
+          }
+        return max;
+    }          
+    }
+    public static void main(String[] args) throws Exception {
+    Configuration conf = new Configuration();
+    Job job = Job.getInstance(conf, "word count");
+    job.setJarByClass(MaxTemperature.class);
+    job.setMapperClass(TokenizerMapper.class);
+    job.setReducerClass(IntSumReducer.class);
+    job.setMapOutputKeyClass(Text.class);
+    job.setMapOutputValueClass(IntWritable.class);
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(Text.class);
+    Path Output= new Path("/home/abhay/Downloads/temperature.out");
+    if (FileSystem.get(conf).exists(Output))
+    {
+        System.out.println("Output path"+Output.toUri() +" exists. Deleting it ...");
+        FileSystem.get(conf).delete(Output);
+    }
+    FileInputFormat.addInputPath(job, new Path("/home/abhay/Downloads/temperature.csv"));
+    FileOutputFormat.setOutputPath(job, Output);
+    System.exit(job.waitForCompletion(true) ? 0 : 1);
+  }
+}

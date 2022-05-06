@@ -1,0 +1,104 @@
+# ARRAY EXAMPLE #
+
+# OBJECTIVE - get an output from an ArrayWritable in a simple MapReduce-Task. 
+
+
+# MAIN METHOD   # 
+
+public static void main(String[] args) throws Exception {
+    Configuration conf = new Configuration();
+    Job job = Job.getInstance(conf, "word length V1");
+
+    // Set Classes
+    job.setJarByClass(WordLength_V01.class);
+    job.setMapperClass(MyMapper.class);
+    // job.setCombinerClass(MyReducer.class);
+    job.setReducerClass(MyReducer.class);
+
+    // Set Output and Input Parameters
+    job.setMapOutputKeyClass(Text.class);
+    job.setMapOutputValueClass(IntWritable.class);
+
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(IntArrayWritable.class);
+
+    // Number of Reducers
+    job.setNumReduceTasks(1);
+
+    // Set FileDestination
+    FileInputFormat.addInputPath(job, new Path(args[0]));
+    FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+    System.exit(job.waitForCompletion(true) ? 0 : 1);
+}
+
+
+# MAPPER # 
+
+public static class MyMapper extends Mapper<Object, Text, Text, IntWritable> {
+
+    // Initialize Variables
+    private final static IntWritable one = new IntWritable(1);
+    private Text word = new Text();
+
+    // Map Method
+    public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+
+        // Use Tokenizer
+        StringTokenizer itr = new StringTokenizer(value.toString());
+
+        // Select each word
+        while (itr.hasMoreTokens()) {
+            word.set(itr.nextToken());
+
+            // Output Pair
+            context.write(word, one);
+        }
+    }
+}
+
+
+# REDUCER #
+
+public void reduce(Text key, Iterable<IntWritable> values,
+            Context context) throws IOException, InterruptedException {
+
+        // Count Words
+        int sum = 0;
+        for (IntWritable val : values) {
+            sum += val.get();
+        }
+
+        count.set(sum);
+
+        // Wordlength
+        length.set(key.getLength());
+
+        // Define Output
+        IntWritable[] temp = new IntWritable[2];
+        temp[0] = count;
+        temp[1] = length;
+
+        context.write(key, new IntArrayWritable(temp));
+}
+
+# SUB CLASS #
+
+
+public static class IntArrayWritable extends ArrayWritable {
+
+    public IntArrayWritable(IntWritable[] values) {
+        super(IntWritable.class, values);
+    }
+
+    @Override
+    public IntWritable[] get() {
+        return (IntWritable[]) super.get();
+    }
+
+    @Override
+    public String toString() {
+        IntWritable[] values = get();
+        return values[0].toString() + ", " + values[1].toString();
+    }
+}

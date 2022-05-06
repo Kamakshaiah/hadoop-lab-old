@@ -1,0 +1,25 @@
+#### MOVING AVERAGE IMPLEMENTATION #########
+
+# To run this code on your own Hadoop cluster, download CDH from Cloudera and setup a pseudo-distributed cluster–which is a single node of Hadoop. 
+# Pseudo-distributed mode is a great way to try out code with Hadoop. Next download and compile the moving average code into a jar. 
+# To download the code directly from github (in the shell in MacOSX, ssh terminal window in linux, or MINGW32 for win32) we’ll use the command:
+
+git clone git://github.com/jpatanooga/Caduceus
+
+# To compile we can either use Ant and simply type:
+
+ant
+
+hadoop fs -copyFromLocal data/movingaverage/yahoo_stock_AA_32_mini.csv /&lt;somewhere_in_hdfs&gt;
+
+hadoop jar Caduceus-0.1.0.jar
+tv.floe.caduceus.hadoop.movingaverage.NoShuffleSort_MovingAverageJob
+&lt;input_hdfs_dir_where_we_put_data&gt; &lt;output_hdfs_results_dir&gt; 
+
+
+hadoop fs -cat /&lt;output_hdfs_results_dir&gt;/part-00000
+
+
+Group: AA, Date: 2008-03-03   Moving Average: 33.529335
+Group: AA, Date: 2008-03-04   Moving Average: 34.529335
+Group: AA, Date: 2008-03-05   Moving Average: 35.396
